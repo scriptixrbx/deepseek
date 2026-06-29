@@ -1,177 +1,413 @@
--- MM2 Simple Auto Trade - WORKING VERSION
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- Создаем GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NameChanger"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
 
--- Настройки
-local AUTO_TRADE_ENABLED = false
-local AUTO_ADD_ENABLED = false
-
--- Создаем интерфейс
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleAutoTrade"
-screenGui.Parent = playerGui
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 150)
-mainFrame.Position = UDim2.new(0, 10, 0, 10)
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
+-- Главный фрейм
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 220)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
 -- Заголовок
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "MM2 Auto Trade"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-title.TextSize = 16
-title.Font = Enum.Font.GothamBold
-title.Parent = mainFrame
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+Title.BorderSizePixel = 0
+Title.Text = "Auto Trade Name Changer"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
 
--- Кнопка автотрейда
-local tradeToggle = Instance.new("TextButton")
-tradeToggle.Size = UDim2.new(0.9, 0, 0, 40)
-tradeToggle.Position = UDim2.new(0.05, 0, 0, 35)
-tradeToggle.Text = "Автотрейд: ВЫКЛ"
-tradeToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-tradeToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-tradeToggle.TextSize = 14
-tradeToggle.Parent = mainFrame
+-- Кнопка закрытия
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 2)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 16
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = MainFrame
 
--- Кнопка авто-добавления
-local addToggle = Instance.new("TextButton")
-addToggle.Size = UDim2.new(0.9, 0, 0, 40)
-addToggle.Position = UDim2.new(0.05, 0, 0, 80)
-addToggle.Text = "Авто-добавление: ВЫКЛ"
-addToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-addToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-addToggle.TextSize = 14
-addToggle.Parent = mainFrame
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
--- Функция поиска трейд GUI
-local function findTradeGUI()
-    for _, gui in pairs(playerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and (gui.Name:lower():find("trade") or gui.Name:lower():find("trading")) then
-            return gui
+-- Поле Old Name (автоматически заполняется)
+local OldNameLabel = Instance.new("TextLabel")
+OldNameLabel.Size = UDim2.new(1, -20, 0, 20)
+OldNameLabel.Position = UDim2.new(0, 10, 0, 40)
+OldNameLabel.BackgroundTransparency = 1
+OldNameLabel.Text = "Detected name (last trade):"
+OldNameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+OldNameLabel.TextSize = 12
+OldNameLabel.Font = Enum.Font.Gotham
+OldNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+OldNameLabel.Parent = MainFrame
+
+local OldNameBox = Instance.new("TextBox")
+OldNameBox.Size = UDim2.new(1, -20, 0, 30)
+OldNameBox.Position = UDim2.new(0, 10, 0, 60)
+OldNameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+OldNameBox.BorderSizePixel = 0
+OldNameBox.Text = ""
+OldNameBox.PlaceholderText = "Auto-detected..."
+OldNameBox.TextColor3 = Color3.fromRGB(255, 255, 100)
+OldNameBox.TextSize = 14
+OldNameBox.Font = Enum.Font.Gotham
+OldNameBox.ClearTextOnFocus = false
+OldNameBox.Parent = MainFrame
+
+-- Поле New Name (редактируемое)
+local NewNameLabel = Instance.new("TextLabel")
+NewNameLabel.Size = UDim2.new(1, -20, 0, 20)
+NewNameLabel.Position = UDim2.new(0, 10, 0, 100)
+NewNameLabel.BackgroundTransparency = 1
+NewNameLabel.Text = "New name (edit this):"
+NewNameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+NewNameLabel.TextSize = 12
+NewNameLabel.Font = Enum.Font.Gotham
+NewNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NewNameLabel.Parent = MainFrame
+
+local NewNameBox = Instance.new("TextBox")
+NewNameBox.Size = UDim2.new(1, -20, 0, 30)
+NewNameBox.Position = UDim2.new(0, 10, 0, 120)
+NewNameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+NewNameBox.BorderSizePixel = 0
+NewNameBox.Text = ""
+NewNameBox.PlaceholderText = "Enter new name..."
+NewNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NewNameBox.TextSize = 14
+NewNameBox.Font = Enum.Font.Gotham
+NewNameBox.Parent = MainFrame
+
+-- История трейдов
+local HistoryLabel = Instance.new("TextLabel")
+HistoryLabel.Size = UDim2.new(1, -20, 0, 15)
+HistoryLabel.Position = UDim2.new(0, 10, 0, 155)
+HistoryLabel.BackgroundTransparency = 1
+HistoryLabel.Text = "Last trades:"
+HistoryLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+HistoryLabel.TextSize = 11
+HistoryLabel.Font = Enum.Font.Gotham
+HistoryLabel.TextXAlignment = Enum.TextXAlignment.Left
+HistoryLabel.Parent = MainFrame
+
+local HistoryBox = Instance.new("TextBox")
+HistoryBox.Size = UDim2.new(1, -20, 0, 25)
+HistoryBox.Position = UDim2.new(0, 10, 0, 170)
+HistoryBox.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+HistoryBox.BorderSizePixel = 0
+HistoryBox.Text = ""
+HistoryBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+HistoryBox.TextSize = 11
+HistoryBox.Font = Enum.Font.Gotham
+HistoryBox.TextEditable = false
+HistoryBox.TextXAlignment = Enum.TextXAlignment.Left
+HistoryBox.Parent = MainFrame
+
+-- Status лейбл
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -20, 0, 15)
+StatusLabel.Position = UDim2.new(0, 10, 0, 200)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Waiting for trade..."
+StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+StatusLabel.TextSize = 11
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.Parent = MainFrame
+
+-- Переменные
+local lastTradeNames = {} -- хранит последние 5 ников
+local currentOldName = ""
+local isInTrade = false
+local tradeNameChecked = false
+
+-- Функция для проверки что объект в трейде
+local function IsInTrade(obj)
+    local parent = obj.Parent
+    while parent do
+        if parent.Name:lower():find("trade") then
+            return true
+        end
+        parent = parent.Parent
+    end
+    return false
+end
+
+-- Функция для проверки что объект в чате/уведомлениях
+local function IsInChat(obj)
+    local parent = obj.Parent
+    while parent do
+        local name = parent.Name:lower()
+        if name:find("notif") or name:find("message") or name:find("chat") then
+            return true
+        end
+        parent = parent.Parent
+    end
+    return false
+end
+
+-- Функция для извлечения ника из текста (ищет @username или просто имя)
+local function ExtractName(text)
+    -- Убираем @ если есть
+    local name = text:gsub("@", "")
+    -- Убираем пробелы по краям
+    name = name:match("^%s*(.-)%s*$")
+    return name
+end
+
+-- Функция для поиска ника в трейде
+local function FindTradeName()
+    for _, obj in ipairs(game:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            if IsInTrade(obj) and obj.Text and obj.Text ~= "" then
+                local text = obj.Text
+                
+                -- Пропускаем системные тексты
+                if text:find("Trade") or text:find("Accept") or text:find("Decline") or 
+                   text:find("Add") or text:find("Inventory") or text:find("You") or
+                   text:find("Pet") or text:find("Item") or text:find("Click") then
+                    goto continue
+                end
+                
+                -- Проверяем что это ник (обычно короткий текст без спецсимволов)
+                if #text >= 3 and #text <= 20 and not text:find("%s") then
+                    -- Проверяем что это не название предмета
+                    if not text:find("Egg") and not text:find("Pet") and not text:find("Vehicle") then
+                        local name = ExtractName(text)
+                        if name ~= "" then
+                            return name
+                        end
+                    end
+                end
+                
+                ::continue::
+            end
         end
     end
     return nil
 end
 
--- Функция добавления всех предметов
-local function addAllItems()
-    if not AUTO_ADD_ENABLED then return end
+-- Функция для поиска ника в сообщениях о трейде
+local function FindChatTradeName(obj)
+    if obj.Text and obj.Text:find("trade") then
+        -- Ищем ник в сообщении
+        for word in obj.Text:gmatch("%S+") do
+            if #word >= 3 and #word <= 20 and not word:find("trade") then
+                local clean = ExtractName(word)
+                if clean ~= "" and clean ~= "You" and clean ~= "you" then
+                    return clean
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Функция добавления ника в историю
+local function AddToHistory(name)
+    -- Проверяем что такого ника еще нет в истории
+    for _, n in ipairs(lastTradeNames) do
+        if n == name then
+            return
+        end
+    end
     
-    local backpack = player:FindFirstChild("Backpack")
-    if not backpack then return end
+    table.insert(lastTradeNames, 1, name)
     
-    -- Пробуем разные Remote события
-    local remotes = {
-        "AddItemToTrade",
-        "TradeAddItem", 
-        "AddToTrade",
-        "AddItem",
-        "TradeItem"
-    }
+    -- Храним только 5 последних
+    if #lastTradeNames > 5 then
+        table.remove(lastTradeNames)
+    end
     
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            for _, remoteName in pairs(remotes) do
-                local remote = ReplicatedStorage:FindFirstChild(remoteName)
-                if remote then
-                    pcall(function()
-                        remote:FireServer(item)
-                        print("Добавлен предмет: " .. item.Name)
-                    end)
+    -- Обновляем историю в GUI
+    HistoryBox.Text = table.concat(lastTradeNames, " → ")
+end
+
+-- Функция замены текста
+local function ReplaceText(obj)
+    if not obj or not obj.Text then return false end
+    if currentOldName == "" then return false end
+    
+    local newName = NewNameBox.Text
+    if newName == "" then return false end
+    
+    local changed = false
+    
+    if obj.Text == currentOldName then
+        obj.Text = newName
+        changed = true
+    elseif obj.Text:find(currentOldName) then
+        obj.Text = obj.Text:gsub(currentOldName, newName)
+        changed = true
+    end
+    
+    return changed
+end
+
+-- Обработка объекта
+local function ProcessObject(obj)
+    if not obj:IsA("TextLabel") and not obj:IsA("TextButton") and not obj:IsA("TextBox") then
+        return
+    end
+    
+    if not obj.Text then return end
+    
+    -- Проверяем не появился ли трейд
+    if IsInTrade(obj) and not isInTrade then
+        isInTrade = true
+        tradeNameChecked = false
+        StatusLabel.Text = "🔍 Trade detected! Scanning..."
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    end
+    
+    -- Если мы в трейде и еще не нашли ник
+    if isInTrade and not tradeNameChecked then
+        task.wait(0.5) -- Ждем загрузки трейда
+        
+        local foundName = FindTradeName()
+        if foundName then
+            currentOldName = foundName
+            OldNameBox.Text = foundName
+            AddToHistory(foundName)
+            tradeNameChecked = true
+            StatusLabel.Text = "✅ Detected: " .. foundName
+            StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        end
+    end
+    
+    -- Если трейд закрылся
+    if not IsInTrade(obj) and isInTrade then
+        -- Проверяем действительно ли трейд закрылся
+        local tradeStillOpen = false
+        for _, o in ipairs(game:GetDescendants()) do
+            if IsInTrade(o) then
+                tradeStillOpen = true
+                break
+            end
+        end
+        
+        if not tradeStillOpen then
+            isInTrade = false
+            tradeNameChecked = false
+            StatusLabel.Text = "Waiting for trade..."
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        end
+    end
+    
+    -- Замена текста
+    if currentOldName ~= "" and NewNameBox.Text ~= "" then
+        if obj.Text:find(currentOldName) then
+            if IsInTrade(obj) or IsInChat(obj) then
+                if ReplaceText(obj) then
+                    StatusLabel.Text = "✅ Replaced: " .. currentOldName .. " → " .. NewNameBox.Text
+                    StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
                 end
             end
         end
     end
 end
 
--- Функция принятия трейда
-local function acceptTrade()
-    if not AUTO_TRADE_ENABLED then return end
+-- Функция для проверки сообщений чата (для поиска ника)
+local function CheckChatForName(obj)
+    if not obj.Text then return end
     
-    local tradeGUI = findTradeGUI()
-    if not tradeGUI then return end
-    
-    -- Ищем кнопку Accept
-    for _, element in pairs(tradeGUI:GetDescendants()) do
-        if element:IsA("TextButton") then
-            local text = element.Text:lower()
-            if text:find("accept") or text:find("принять") then
-                pcall(function()
-                    if firesignal then
-                        firesignal(element.MouseButton1Click)
-                    end
-                    element.BackgroundColor3 = Color3.new(0, 1, 0)
-                    print("Трейд принят!")
-                end)
-                return true
+    if obj.Text:find("trade") and not obj.Text:find("Trade") then
+        local name = FindChatTradeName(obj)
+        if name and currentOldName == "" then
+            currentOldName = name
+            OldNameBox.Text = name
+            AddToHistory(name)
+            StatusLabel.Text = "✅ Found in chat: " .. name
+            StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        end
+    end
+end
+
+-- Обработка всех существующих объектов
+local function ProcessAllExisting()
+    for _, obj in ipairs(game:GetDescendants()) do
+        ProcessObject(obj)
+        CheckChatForName(obj)
+    end
+end
+
+-- Отслеживание новых объектов
+game.DescendantAdded:Connect(function(obj)
+    task.wait(0.05)
+    ProcessObject(obj)
+    CheckChatForName(obj)
+end)
+
+-- Отслеживание изменения текста
+local function WatchTextChanges(obj)
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+        obj:GetPropertyChangedSignal("Text"):Connect(function()
+            task.wait(0.05)
+            ProcessObject(obj)
+            CheckChatForName(obj)
+        end)
+    end
+end
+
+-- Вешаем отслеживание на все существующие объекты
+for _, obj in ipairs(game:GetDescendants()) do
+    WatchTextChanges(obj)
+end
+
+-- Вешаем отслеживание на новые объекты
+game.DescendantAdded:Connect(function(obj)
+    WatchTextChanges(obj)
+end)
+
+-- Периодическая проверка (каждые 500мс) на случай пропуска
+task.spawn(function()
+    while task.wait(0.5) do
+        if isInTrade and not tradeNameChecked then
+            local foundName = FindTradeName()
+            if foundName then
+                currentOldName = foundName
+                OldNameBox.Text = foundName
+                AddToHistory(foundName)
+                tradeNameChecked = true
+                StatusLabel.Text = "✅ Detected: " .. foundName
+                StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            end
+        end
+        
+        -- Проверяем не закрылся ли трейд
+        if isInTrade then
+            local tradeFound = false
+            for _, obj in ipairs(game:GetDescendants()) do
+                if IsInTrade(obj) then
+                    tradeFound = true
+                    break
+                end
+            end
+            if not tradeFound then
+                isInTrade = false
+                tradeNameChecked = false
+                StatusLabel.Text = "Waiting for trade..."
+                StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
             end
         end
     end
-    
-    -- Пробуем Remote событие
-    local acceptRemote = ReplicatedStorage:FindFirstChild("AcceptTrade") or 
-                        ReplicatedStorage:FindFirstChild("TradeAccept")
-    if acceptRemote then
-        pcall(function()
-            acceptRemote:FireServer()
-            print("Трейд принят через Remote!")
-        end)
-    end
-    
-    return false
-end
-
--- Обработчики кнопок
-tradeToggle.MouseButton1Click:Connect(function()
-    AUTO_TRADE_ENABLED = not AUTO_TRADE_ENABLED
-    if AUTO_TRADE_ENABLED then
-        tradeToggle.Text = "Автотрейд: ВКЛ"
-        tradeToggle.BackgroundColor3 = Color3.fromRGB(60, 200, 80)
-        print("Автотрейд включен!")
-    else
-        tradeToggle.Text = "Автотрейд: ВЫКЛ"
-        tradeToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-    end
 end)
 
-addToggle.MouseButton1Click:Connect(function()
-    AUTO_ADD_ENABLED = not AUTO_ADD_ENABLED
-    if AUTO_ADD_ENABLED then
-        addToggle.Text = "Авто-добавление: ВКЛ"
-        addToggle.BackgroundColor3 = Color3.fromRGB(60, 200, 80)
-        print("Авто-добавление включено!")
-    else
-        addToggle.Text = "Авто-добавление: ВЫКЛ"
-        addToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-    end
-end)
-
--- Главный цикл
-while true do
-    wait(1)
-    
-    -- Проверяем активен ли трейд
-    local tradeGUI = findTradeGUI()
-    if tradeGUI and tradeGUI.Visible then
-        -- Добавляем предметы если включено
-        if AUTO_ADD_ENABLED then
-            addAllItems()
-        end
-        
-        -- Принимаем трейд если включено
-        if AUTO_TRADE_ENABLED then
-            acceptTrade()
-        end
-    end
-end
+-- Запуск
+task.wait(1)
+ProcessAllExisting()
+print("Auto Trade Name Changer loaded!")
