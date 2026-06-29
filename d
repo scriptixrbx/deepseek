@@ -7,8 +7,8 @@ ScreenGui.Parent = game.CoreGui
 -- Главный фрейм
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 300, 0, 180)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -90)
+MainFrame.Size = UDim2.new(0, 280, 0, 150)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -75)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -17,26 +17,24 @@ MainFrame.Parent = ScreenGui
 
 -- Заголовок
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
 Title.BorderSizePixel = 0
-Title.Text = "Trade Name Changer"
+Title.Text = "Auto Trade Name"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
+Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
 -- Кнопка закрытия
 local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -35, 0, 2)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0, 2)
 CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseButton.BorderSizePixel = 0
 CloseButton.Text = "X"
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 16
+CloseButton.TextSize = 14
 CloseButton.Font = Enum.Font.GothamBold
 CloseButton.Parent = MainFrame
 
@@ -44,76 +42,47 @@ CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Поле Old Name (то что ищем)
-local OldNameLabel = Instance.new("TextLabel")
-OldNameLabel.Size = UDim2.new(1, -20, 0, 20)
-OldNameLabel.Position = UDim2.new(0, 10, 0, 40)
-OldNameLabel.BackgroundTransparency = 1
-OldNameLabel.Text = "Old name (auto-detected):"
-OldNameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-OldNameLabel.TextSize = 12
-OldNameLabel.Font = Enum.Font.Gotham
-OldNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-OldNameLabel.Parent = MainFrame
+-- Поле для нового ника (сюда авто-копируется ник из трейда)
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(1, -20, 0, 30)
+NameBox.Position = UDim2.new(0, 10, 0, 45)
+NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+NameBox.BorderSizePixel = 0
+NameBox.Text = ""
+NameBox.PlaceholderText = "Nick will appear here..."
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.TextSize = 14
+NameBox.Font = Enum.Font.Gotham
+NameBox.Parent = MainFrame
 
-local OldNameBox = Instance.new("TextBox")
-OldNameBox.Size = UDim2.new(1, -20, 0, 30)
-OldNameBox.Position = UDim2.new(0, 10, 0, 60)
-OldNameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-OldNameBox.BorderSizePixel = 0
-OldNameBox.Text = ""
-OldNameBox.PlaceholderText = "Waiting for trade..."
-OldNameBox.TextColor3 = Color3.fromRGB(255, 255, 100)
-OldNameBox.TextSize = 14
-OldNameBox.Font = Enum.Font.Gotham
-OldNameBox.TextEditable = false
-OldNameBox.Parent = MainFrame
+-- Кнопка Apply
+local ApplyButton = Instance.new("TextButton")
+ApplyButton.Size = UDim2.new(1, -20, 0, 30)
+ApplyButton.Position = UDim2.new(0, 10, 0, 85)
+ApplyButton.BackgroundColor3 = Color3.fromRGB(65, 130, 200)
+ApplyButton.BorderSizePixel = 0
+ApplyButton.Text = "APPLY NAME"
+ApplyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ApplyButton.TextSize = 14
+ApplyButton.Font = Enum.Font.GothamBold
+ApplyButton.Parent = MainFrame
 
--- Поле New Name (сюда вводим на что менять)
-local NewNameLabel = Instance.new("TextLabel")
-NewNameLabel.Size = UDim2.new(1, -20, 0, 20)
-NewNameLabel.Position = UDim2.new(0, 10, 0, 100)
-NewNameLabel.BackgroundTransparency = 1
-NewNameLabel.Text = "New name (edit to change):"
-NewNameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-NewNameLabel.TextSize = 12
-NewNameLabel.Font = Enum.Font.Gotham
-NewNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-NewNameLabel.Parent = MainFrame
-
-local NewNameBox = Instance.new("TextBox")
-NewNameBox.Size = UDim2.new(1, -20, 0, 30)
-NewNameBox.Position = UDim2.new(0, 10, 0, 120)
-NewNameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-NewNameBox.BorderSizePixel = 0
-NewNameBox.Text = "zolo"
-NewNameBox.PlaceholderText = "Enter name to show..."
-NewNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-NewNameBox.TextSize = 14
-NewNameBox.Font = Enum.Font.Gotham
-NewNameBox.Parent = MainFrame
-
--- Status лейбл
+-- Status
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Size = UDim2.new(1, -20, 0, 20)
-StatusLabel.Position = UDim2.new(0, 10, 0, 155)
+StatusLabel.Position = UDim2.new(0, 10, 0, 120)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "✅ Ready - waiting for trade"
-StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+StatusLabel.Text = "Waiting for trade..."
+StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
 StatusLabel.TextSize = 12
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.Parent = MainFrame
-
--- Переменные
-local currentOldName = ""
-local foundNames = {}
 
 -- Функция проверки что объект в трейде
 local function IsInTrade(obj)
     local parent = obj.Parent
     while parent do
-        local name = parent.Name:lower()
-        if name:find("trade") then
+        if parent.Name:lower():find("trade") then
             return true
         end
         parent = parent.Parent
@@ -121,156 +90,128 @@ local function IsInTrade(obj)
     return false
 end
 
--- Функция проверки что это ник (а не текст интерфейса)
-local function IsNickname(text)
-    if not text then return false end
-    if #text < 3 or #text > 20 then return false end
-    if text:find("Trade") or text:find("Accept") or text:find("Decline") then return false end
-    if text:find("Add") or text:find("Inventory") or text:find("Click") then return false end
-    if text:find("Pet") or text:find("Egg") or text:find("Vehicle") then return false end
-    if text:find("Toy") or text:find("Food") or text:find("Gift") then return false end
-    if text:find("You") or text:find("Offer") or text:find("Reset") then return false end
-    if text:find("%s") then return false end -- нет пробелов
-    return true
-end
-
 -- Функция поиска ника в трейде
-local function FindTradeName()
-    local possibleNames = {}
+local function FindNameInTrade()
+    local names = {}
     
     for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-            if IsInTrade(obj) and obj.Text and obj.Visible then
+        if (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj.Text and obj.Visible then
+            if IsInTrade(obj) then
                 local text = obj.Text
-                if IsNickname(text) then
-                    -- Проверяем что это не наш ник
+                -- Отсеиваем системные надписи
+                if text ~= "Trade" and text ~= "Accept" and text ~= "Decline" 
+                    and text ~= "Add" and text ~= "Inventory" and text ~= "Reset"
+                    and not text:find("Pet") and not text:find("Egg") and not text:find("Vehicle")
+                    and not text:find("Toy") and not text:find("Food") and not text:find("Gift")
+                    and not text:find("Click") and not text:find("Offer")
+                    and #text >= 3 and #text <= 20 and not text:find(" ") then
+                    
+                    -- Исключаем свой ник
                     local player = game.Players.LocalPlayer
                     if player and text ~= player.Name and text ~= player.DisplayName then
-                        table.insert(possibleNames, text)
+                        names[text] = (names[text] or 0) + 1
                     end
                 end
             end
         end
     end
     
-    -- Возвращаем самый часто встречающийся ник
-    if #possibleNames > 0 then
-        local counts = {}
-        for _, name in ipairs(possibleNames) do
-            counts[name] = (counts[name] or 0) + 1
+    -- Находим самый частый ник
+    local bestName = nil
+    local bestCount = 0
+    for name, count in pairs(names) do
+        if count > bestCount then
+            bestCount = count
+            bestName = name
         end
-        
-        local bestName = possibleNames[1]
-        local bestCount = 0
-        for name, count in pairs(counts) do
-            if count > bestCount then
-                bestCount = count
-                bestName = name
-            end
-        end
-        
-        return bestName
     end
     
-    return nil
+    return bestName
 end
 
--- Функция замены текста
-local function ReplaceName(oldName, newName)
-    if not oldName or oldName == "" then return 0 end
-    if not newName or newName == "" then return 0 end
-    
+-- Функция замены ника в трейде
+local function ReplaceInTrade(oldName, newName)
     local count = 0
-    
     for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-            if obj.Text and obj.Text:find(oldName) then
-                -- Меняем только в трейде и чате
-                if IsInTrade(obj) or obj.Parent.Name:lower():find("notif") or obj.Parent.Name:lower():find("chat") then
-                    obj.Text = obj.Text:gsub(oldName, newName)
-                    count = count + 1
-                end
+        if (obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox")) and obj.Text then
+            if IsInTrade(obj) and obj.Text:find(oldName) then
+                obj.Text = obj.Text:gsub(oldName, newName)
+                count = count + 1
             end
         end
     end
-    
     return count
 end
 
--- Главная функция - поиск и замена
-local function CheckAndReplace()
-    local foundName = FindTradeName()
-    
-    if foundName and foundName ~= currentOldName then
-        currentOldName = foundName
-        OldNameBox.Text = foundName
-        StatusLabel.Text = "🔍 Found: " .. foundName
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-        
-        -- Сразу меняем
-        local newName = NewNameBox.Text
-        if newName ~= "" then
-            local count = ReplaceName(foundName, newName)
-            if count > 0 then
-                StatusLabel.Text = "✅ Replaced: " .. foundName .. " → " .. newName .. " (" .. count .. ")"
-                StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-            end
-        end
+-- Переменная для хранения оригинального ника
+local originalName = ""
+
+-- Функция применения ника
+local function ApplyName()
+    local newName = NameBox.Text
+    if newName == "" then
+        StatusLabel.Text = "❌ Enter a name first!"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
     end
     
-    -- Если трейд открыт и ник найден - продолжаем менять
-    if currentOldName ~= "" then
-        local newName = NewNameBox.Text
-        if newName ~= "" then
-            local count = ReplaceName(currentOldName, newName)
-            if count > 0 then
-                StatusLabel.Text = "✅ Active: " .. currentOldName .. " → " .. newName
-                StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-            end
-        end
+    if originalName == "" then
+        StatusLabel.Text = "❌ No trade detected!"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
     end
     
-    -- Проверяем не закрылся ли трейд
-    local tradeOpen = false
-    for _, obj in ipairs(game:GetDescendants()) do
-        if IsInTrade(obj) then
-            tradeOpen = true
-            break
-        end
-    end
-    
-    if not tradeOpen and currentOldName ~= "" then
-        currentOldName = ""
-        OldNameBox.Text = ""
-        StatusLabel.Text = "✅ Ready - waiting for trade"
+    local count = ReplaceInTrade(originalName, newName)
+    if count > 0 then
+        StatusLabel.Text = "✅ Changed to: " .. newName .. " (" .. count .. ")"
         StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    else
+        StatusLabel.Text = "❌ Name not found in trade"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end
 
--- Постоянная проверка каждые 200мс
+-- Кнопка Apply
+ApplyButton.MouseButton1Click:Connect(ApplyName)
+
+-- Авто-поиск ника при открытии трейда
 task.spawn(function()
-    while task.wait(0.2) do
-        pcall(CheckAndReplace)
-    end
-end)
-
--- Отслеживание новых объектов
-game.DescendantAdded:Connect(function(obj)
-    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-        task.wait(0.05)
-        pcall(CheckAndReplace)
-    end
-end)
-
--- Отслеживание изменения текста
-game.DescendantAdded:Connect(function(obj)
-    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-        obj:GetPropertyChangedSignal("Text"):Connect(function()
-            task.wait(0.05)
-            pcall(CheckAndReplace)
+    while task.wait(0.3) do
+        pcall(function()
+            local foundName = FindNameInTrade()
+            
+            if foundName then
+                if foundName ~= originalName then
+                    originalName = foundName
+                    NameBox.Text = foundName
+                    StatusLabel.Text = "🔍 Found: " .. foundName
+                    StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                end
+            else
+                if originalName ~= "" then
+                    originalName = ""
+                    StatusLabel.Text = "Waiting for trade..."
+                    StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+                end
+            end
         end)
     end
 end)
 
-print("Trade Name Changer loaded!")
-print("Edit 'New name' field to set replacement name")
+-- Отслеживание появления трейда
+game.DescendantAdded:Connect(function(obj)
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+        task.wait(0.2)
+        pcall(function()
+            local foundName = FindNameInTrade()
+            if foundName and foundName ~= originalName then
+                originalName = foundName
+                NameBox.Text = foundName
+                StatusLabel.Text = "🔍 Found: " .. foundName
+                StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            end
+        end)
+    end
+end)
+
+print("Script loaded! When trade opens, name will appear automatically.")
