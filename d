@@ -1,119 +1,185 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+--[[
+    Adopt Me Pet Spawning Script
+    This script allows users to spawn pets from a predefined list.
+    It handles case-insensitive input, validates against the list,
+    and suggests close matches using Levenshtein distance.
+    Placeholder functions are provided for game-specific I/O and API calls.
+]]
 
--- Создаём GUI, если его нет
-local gui = PlayerGui:FindFirstChild("TradeNameChangerGUI")
-if not gui then
-    gui = Instance.new("ScreenGui")
-    gui.Name = "TradeNameChangerGUI"
-    gui.Parent = PlayerGui
-    gui.ResetOnSpawn = false
+-- ============================================================
+-- 1. Define the list of valid pet names (as per Adopt Me)
+-- ============================================================
+local VALID_PETS = {
+    "Unicorn", "Dragon", "Turtle", "Kangaroo", "Frost Dragon",
+    "Shadow Dragon", "Giraffe", "Bat Dragon", "Owl", "Parrot",
+    "Crow", "Evil Unicorn", "Arctic Reindeer", "Monkey King",
+    "Queen Bee", "King Bee", "Golden Rat", "Albino Monkey",
+    "King Monkey", "Ninja Monkey", "Frost Fury", "Snow Owl",
+    "T-Rex", "Dodo", "Golden Unicorn", "Diamond Unicorn",
+    "Lunar Ox", "Metal Ox", "Golden Ladybug", "Diamond Ladybug",
+    "Peacock", "Octopus", "Shark", "Phoenix", "Goldhorn",
+    "Dancing Dragon", "Hawk", "Chimera", "Baku", "Sugar Glider"
+    -- Add more pets as needed
+}
+
+-- ============================================================
+-- 2. Create a lookup table with lowercase keys for O(1) validation
+-- ============================================================
+local petLookup = {}
+for _, name in ipairs(VALID_PETS) do
+    petLookup[name:lower()] = name  -- store the original casing
 end
 
--- Функция создания поля ввода
-local function CreateTextBox(name, placeholder, posY)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 220, 0, 35)
-    frame.Position = UDim2.new(0, 10, 0, posY)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 1
-    frame.Parent = gui
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 70, 1, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 14
-    label.Parent = frame
-
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -80, 1, 0)
-    box.Position = UDim2.new(0, 75, 0, 0)
-    box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    box.PlaceholderText = placeholder
-    box.Text = ""
-    box.Font = Enum.Font.SourceSans
-    box.TextSize = 14
-    box.Parent = frame
-    return box
+-- ============================================================
+-- 3. Helper function to convert a string to lowercase
+-- ============================================================
+local function toLower(str)
+    if not str then return "" end
+    return str:lower()
 end
 
--- Создаём поля (или берём существующие)
-local oldBox = gui:FindFirstChild("OldNameBox")
-if not oldBox or not oldBox:IsA("TextBox") then
-    oldBox = CreateTextBox("Old name", "Введи старое имя", 10)
-    oldBox.Name = "OldNameBox"
-end
+-- ============================================================
+-- 4. Levenshtein distance function (case-sensitive, but we call it on lowercased strings)
+-- ============================================================
+local function levenshtein(s, t)
+    local m, n = #s, #t
+    if m == 0 then return n end
+    if n == 0 then return m end
 
-local newBox = gui:FindFirstChild("NewNameBox")
-if not newBox or not newBox:IsA("TextBox") then
-    newBox = CreateTextBox("New name", "Введи новое имя", 55)
-    newBox.Name = "NewNameBox"
-end
+    local d = {}
+    for i = 0, m do d[i] = { [0] = i } end
+    for j = 0, n do d[0][j] = j end
 
--- Переменные для имён
-local currentOld = ""
-local currentNew = ""
-
-oldBox:GetPropertyChangedSignal("Text"):Connect(function()
-    currentOld = oldBox.Text
-end)
-
-newBox:GetPropertyChangedSignal("Text"):Connect(function()
-    currentNew = newBox.Text
-end)
-
--- Замена во всех текстовых объектах
-local function ReplaceAll()
-    if currentOld == "" or currentNew == "" then return end
-    for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-            local txt = obj.Text
-            if txt and string.find(txt, currentOld, 1, true) then
-                local newTxt = string.gsub(txt, currentOld, currentNew)
-                if newTxt ~= txt then
-                    obj.Text = newTxt
-                end
-            end
+    for i = 1, m do
+        local si = s:sub(i, i)
+        for j = 1, n do
+            local tj = t:sub(j, j)
+            local cost = (si == tj) and 0 or 1
+            d[i][j] = math.min(
+                d[i-1][j] + 1,
+                d[i][j-1] + 1,
+                d[i-1][j-1] + cost
+            )
         end
     end
+    return d[m][n]
 end
 
--- Постоянное сканирование (каждый кадр)
-RunService.Heartbeat:Connect(ReplaceAll)
+-- ============================================================
+-- 5. Function to suggest pet names close to the input
+--    Returns a table of suggested names (original casing) with distance <= threshold
+-- ============================================================
+local function suggestPets(input, threshold)
+    threshold = threshold or 2
+    local suggestions = {}
+    local inputLower = toLower(input)
+    if inputLower == "" then return suggestions end
 
--- Реакция на новые объекты
-game.DescendantAdded:Connect(function()
-    task.wait(0.1)
-    ReplaceAll()
-end)
+    for _, validName in ipairs(VALID_PETS) do
+        local dist = levenshtein(inputLower, toLower(validName))
+        if dist <= threshold then
+            table.insert(suggestions, { name = validName, distance = dist })
+        end
+    end
 
--- Отслеживание изменений текста
-local function WatchTextChanges(obj)
-    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-        obj:GetPropertyChangedSignal("Text"):Connect(function()
-            task.wait(0.1)
-            ReplaceAll()
-        end)
+    -- Sort by distance, then by alphabetical order
+    table.sort(suggestions, function(a, b)
+        if a.distance ~= b.distance then
+            return a.distance < b.distance
+        else
+            return a.name < b.name
+        end
+    end)
+
+    -- Extract just the names
+    local result = {}
+    for _, item in ipairs(suggestions) do
+        table.insert(result, item.name)
+    end
+    return result
+end
+
+-- ============================================================
+-- 6. Pet spawning function (placeholder for Adopt Me API)
+--    In the actual environment, replace the comment with the real API call.
+-- ============================================================
+local function spawnPet(petName)
+    -- ==========================================================
+    -- !!! REPLACE THIS COMMENT WITH ACTUAL ADOPT ME API CALL !!!
+    -- Example: AdoptMe.SpawnPet(petName)
+    -- ==========================================================
+    print("[API] Spawning pet: " .. petName)
+    -- In a real environment, you would call something like:
+    -- game:GetService("ReplicatedStorage"):WaitForChild("PetSpawn"):FireServer(petName)
+    return true   -- assume success
+end
+
+-- ============================================================
+-- 7. Main interaction loop
+-- ============================================================
+local function main()
+    print("=== Adopt Me Pet Spawner ===")
+    print("Enter the name of the pet you want to spawn.")
+    print("Type 'exit' or 'quit' to cancel.\n")
+
+    while true do
+        -- ==========================================================
+        -- !!! REPLACE THIS WITH ACTUAL INPUT METHOD !!!
+        -- Example: local userInput = io.read()   (for console)
+        -- In Adopt Me, this might be a TextBox or chat command.
+        -- ==========================================================
+        io.write("Pet name: ")
+        local userInput = io.read()
+        if not userInput then break end
+
+        -- Trim whitespace
+        userInput = userInput:gsub("^%s+", ""):gsub("%s+$", "")
+
+        -- Allow user to cancel
+        if userInput:lower() == "exit" or userInput:lower() == "quit" then
+            print("Exiting pet spawner.")
+            break
+        end
+
+        -- Handle empty input
+        if userInput == "" then
+            print("No pet name entered. Please try again.")
+            goto continue
+        end
+
+        -- Check if input is valid (case-insensitive)
+        local lowerInput = toLower(userInput)
+        local validName = petLookup[lowerInput]
+        if validName then
+            -- Valid pet: spawn it and exit loop
+            print("Spawning " .. validName .. " ...")
+            spawnPet(validName)
+            print("Pet spawned successfully!")
+            break
+        else
+            -- Invalid input: provide feedback and suggestions
+            print("'" .. userInput .. "' is not a valid pet name.")
+            local suggestions = suggestPets(userInput, 2)
+            if #suggestions > 0 then
+                print("Did you mean one of these?")
+                for i, name in ipairs(suggestions) do
+                    print("  " .. i .. ". " .. name)
+                end
+            else
+                print("No close matches found. Please check the spelling.")
+            end
+            print("Try again.\n")
+        end
+
+        ::continue::
     end
 end
 
-for _, obj in ipairs(game:GetDescendants()) do
-    WatchTextChanges(obj)
+-- ============================================================
+-- Run the main function if this script is executed directly
+-- ============================================================
+if pcall(function() return ... end) then
+    -- If running as a module, do not automatically execute
+else
+    main()
 end
-
-game.DescendantAdded:Connect(function(obj)
-    WatchTextChanges(obj)
-end)
-
--- Первичный запуск
-task.wait(0.5)
-ReplaceAll()
-
-print("✅ Trade Name Changer loaded!")
